@@ -15,7 +15,28 @@ def get_anchor_text(page):
             list_to_return.append(anchor.text)
     return list_to_return
 
+def get_type(t):
+    liste_types = []
+    list_tr = t.find_all("tr")
+    for tr in list_tr:
+        type_anchor = tr.find("a", title="Type")
+        if type_anchor:
+            list_th = tr.find_all("th")
+            for th in list_th:
+                sibling_td = th.find_next_sibling("td")
+                # print(sibling_td)
+                list_spans = sibling_td.find_all("span")
+                for span in list_spans:
+                    # print(span)
+                    type_pkm = span.find('a').attrs['title'].split(" ",1)[0]
+                    liste_types.append(type_pkm)
+    if len(liste_types)<2:
+        liste_types.append("")
+    return liste_types
+
+# Get the precise date from each pokemon
 def get_pokemon_data(page):
+    liste_data = []
     # print(page)
     html_code = requests.get(page).content
     # print(html_code)
@@ -23,17 +44,29 @@ def get_pokemon_data(page):
     # print(soup)
     title = soup.find('title')
     print(title.text)
+    fiche_info = soup.find('table', class_='ficheinfo')
+    numéro_national = fiche_info.find('span', title="Numérotation nationale")
+    # print(numéro_national.text[2:])
+    liste_data.append(numéro_national.text[2:])
+
+    # Get the types of Pokemons
+    types = get_type(fiche_info)
+    liste_data.append(types)
 
 #Get all pokedex
 différentes_generations = get_anchor_text(pokemons_par_generation)
 # print(différentes_generations)
 
-for génération in différentes_generations:
-    génération = génération.replace(" ", "_")
-    # print(génération)
-    liste_pokemon = get_anchor_text(f"https://www.pokepedia.fr/Cat%C3%A9gorie:{génération}")
-    liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x] #Remove from the list any entry with the characters inside.
-    # print(liste_pokemon)
-    for pokemon in liste_pokemon:
-        get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
 # Get all the pokemons from the pokedex page
+# for génération in différentes_generations:
+#     génération = génération.replace(" ", "_")
+#     # print(génération)
+#     liste_pokemon = get_anchor_text(f"https://www.pokepedia.fr/Cat%C3%A9gorie:{génération}")
+#     liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x] #Remove from the list any entry with the characters inside.
+#     # print(liste_pokemon)
+    
+#     for pokemon in liste_pokemon:
+#         get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
+
+get_pokemon_data(f"https://www.pokepedia.fr/Abo")
+get_pokemon_data(f"https://www.pokepedia.fr/Rapasdepic")
