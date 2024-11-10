@@ -15,12 +15,45 @@ def get_anchor_text(page):
             list_to_return.append(anchor.text)
     return list_to_return
 
+def get_categorie(t):
+    list_tr = t.find_all("tr")
+    for tr in list_tr:
+        anchor = tr.find("a", title="Catégorie")
+        if anchor:
+            list_th = tr.find_all("th")
+            for th in list_th:
+                sibling_td = th.find_next_sibling("td")
+                # print(sibling_td)
+                unwanted_anchor = sibling_td.find('a')
+                unwanted_anchor.extract()
+                return sibling_td.text[1:]
+
+def get_taille(t):
+    list_tr = t.find_all("tr")
+    for tr in list_tr:
+        anchor = tr.find("a", title="Taille")
+        if anchor:
+            list_th = tr.find_all("th")
+            for th in list_th:
+                sibling_td = th.find_next_sibling("td")
+                return sibling_td.text.split(" ",1)[0]
+
+def get_poids(t):
+    list_tr = t.find_all("tr")
+    for tr in list_tr:
+        anchor = tr.find("a", title="Poids")
+        if anchor:
+            list_th = tr.find_all("th")
+            for th in list_th:
+                sibling_td = th.find_next_sibling("td")
+                return sibling_td.text.split(" ",1)[0]
+
 def get_type(t):
     liste_types = []
     list_tr = t.find_all("tr")
     for tr in list_tr:
-        type_anchor = tr.find("a", title="Type")
-        if type_anchor:
+        anchor = tr.find("a", title="Type")
+        if anchor:
             list_th = tr.find_all("th")
             for th in list_th:
                 sibling_td = th.find_next_sibling("td")
@@ -52,6 +85,17 @@ def get_pokemon_data(page):
     # Get the types of Pokemons
     types = get_type(fiche_info)
     liste_data.append(types)
+
+    catégorie = get_categorie(fiche_info)
+    liste_data.append(catégorie)
+
+    taille = get_taille(fiche_info)
+    liste_data.append(taille)
+
+    poids = get_poids(fiche_info)
+    liste_data.append(poids)
+
+    print(liste_data)
 
 #Get all pokedex
 différentes_generations = get_anchor_text(pokemons_par_generation)
