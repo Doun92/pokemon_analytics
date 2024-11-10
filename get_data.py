@@ -15,6 +15,40 @@ def get_anchor_text(page):
             list_to_return.append(anchor.text)
     return list_to_return
 
+def get_statistiques(t):
+    list_headings = t.find_all("h2")
+    for heading in list_headings:
+        # print(heading)
+        first_span = heading.find("span")
+        # Finally found the span with the heading "Statistiques"
+        try:
+            if first_span.attrs['id'] == "Statistiques":
+                print("oui")
+        except:
+            pass
+
+def get_corps(t):
+    list_tr = t.find_all("tr")
+    for tr in list_tr:
+        anchor = tr.find("a", title="Apparence du corps")
+        if anchor:
+            list_th = tr.find_all("th")
+            for th in list_th:
+                sibling_td = th.find_next_sibling("td")
+                corps = sibling_td.find("img")
+                return corps.attrs['alt']
+
+def get_couleur(t):
+    list_tr = t.find_all("tr")
+    for tr in list_tr:
+        anchor = tr.find("a", title="Couleur")
+        if anchor:
+            list_th = tr.find_all("th")
+            for th in list_th:
+                sibling_td = th.find_next_sibling("td")
+                image = sibling_td.find("img")
+                return image.attrs['alt']
+
 def get_categorie(t):
     list_tr = t.find_all("tr")
     for tr in list_tr:
@@ -94,6 +128,15 @@ def get_pokemon_data(page):
 
     poids = get_poids(fiche_info)
     liste_data.append(poids)
+
+    couleur = get_couleur(fiche_info)
+    liste_data.append(couleur)
+
+    corps = get_corps(fiche_info)
+    liste_data.append(corps)
+
+    statistiques = get_statistiques(soup)
+    liste_data.append(statistiques)
 
     print(liste_data)
 
