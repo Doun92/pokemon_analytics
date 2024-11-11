@@ -23,7 +23,9 @@ def get_statistiques(t):
         # Finally found the span with the heading "Statistiques"
         try:
             if first_span.attrs['id'] == "Statistiques":
-                print("oui")
+                parent = first_span.parent
+                stats_div = parent.find_next_sibling("div") 
+                print(stats_div)
         except:
             pass
 
