@@ -16,6 +16,7 @@ def get_anchor_text(page):
     return list_to_return
 
 def get_statistiques(t):
+    empty_dict = {}
     list_headings = t.find_all("h2")
     for heading in list_headings:
         # print(heading)
@@ -25,9 +26,18 @@ def get_statistiques(t):
             if first_span.attrs['id'] == "Statistiques":
                 parent = first_span.parent
                 stats_div = parent.find_next_sibling("div") 
-                print(stats_div)
+                stat_anchors = stats_div.find_all("a", title="Statistique")
+                for anchor in stat_anchors:
+                    try:
+                        stat_name = anchor.text
+                        if stat_name != "Statistique":
+                            prt = anchor.parent
+                            empty_dict[stat_name] = int(prt.find_next_sibling("td").text)
+                    except:
+                        pass
         except:
             pass
+    return empty_dict
 
 def get_corps(t):
     list_tr = t.find_all("tr")
@@ -140,22 +150,22 @@ def get_pokemon_data(page):
     statistiques = get_statistiques(soup)
     liste_data.append(statistiques)
 
-    print(liste_data)
+    return liste_data
 
 #Get all pokedex
 différentes_generations = get_anchor_text(pokemons_par_generation)
 # print(différentes_generations)
 
 # Get all the pokemons from the pokedex page
-# for génération in différentes_generations:
-#     génération = génération.replace(" ", "_")
-#     # print(génération)
-#     liste_pokemon = get_anchor_text(f"https://www.pokepedia.fr/Cat%C3%A9gorie:{génération}")
-#     liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x] #Remove from the list any entry with the characters inside.
-#     # print(liste_pokemon)
+for i,génération in enumerate(différentes_generations):
+    génération = génération.replace(" ", "_")
+    # print(génération)
+    liste_pokemon = get_anchor_text(f"https://www.pokepedia.fr/Cat%C3%A9gorie:{génération}")
+    liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x] #Remove from the list any entry with the characters inside.
+    # print(liste_pokemon)
     
-#     for pokemon in liste_pokemon:
-#         get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
+    for pokemon in liste_pokemon:
+        pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
 
 get_pokemon_data(f"https://www.pokepedia.fr/Abo")
 get_pokemon_data(f"https://www.pokepedia.fr/Rapasdepic")
