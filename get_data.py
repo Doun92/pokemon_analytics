@@ -50,6 +50,18 @@ def get_corps(t):
                 corps = sibling_td.find("img")
                 return corps.attrs['alt']
 
+# Function to flatten nested lists and dictionaries
+def flatten_list(data):
+    flattened = []
+    for item in data:
+        if isinstance(item, list):  # If item is a list, recursively flatten it
+            flattened.extend(flatten_list(item))
+        elif isinstance(item, dict):  # If item is a dict, flatten its key-value pairs
+            flattened.extend((value) for key, value in item.items())
+        else:  # Otherwise, add the item directly
+            flattened.append(item)
+    return flattened
+
 def get_couleur(t):
     list_tr = t.find_all("tr")
     for tr in list_tr:
@@ -164,8 +176,9 @@ for i,génération in enumerate(différentes_generations):
     liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x] #Remove from the list any entry with the characters inside.
     # print(liste_pokemon)
     
-    for pokemon in liste_pokemon:
-        pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
+    # for pokemon in liste_pokemon:
+    #     pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
 
-get_pokemon_data(f"https://www.pokepedia.fr/Abo")
+data = get_pokemon_data(f"https://www.pokepedia.fr/Abo")
+print(flatten_list(data)[:-1])
 get_pokemon_data(f"https://www.pokepedia.fr/Rapasdepic")
