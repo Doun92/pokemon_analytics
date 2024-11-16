@@ -1,9 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
+import csv
 
-# generation_01_url = "https://www.pokepedia.fr/Cat%C3%A9gorie:Pok%C3%A9mon_de_la_premi%C3%A8re_g%C3%A9n%C3%A9ration"
-pokemons_par_generation = "https://www.pokepedia.fr/Cat%C3%A9gorie:Pok%C3%A9mon_par_g%C3%A9n%C3%A9ration"
-
+# On prend le texte dans la balise HTML a
+# On retourne un liste de toutes les balises a dans la div de classe "mw-category-group"
 def get_anchor_text(page):
     list_to_return = []
     html_code = requests.get(page).content 
@@ -15,28 +15,22 @@ def get_anchor_text(page):
             list_to_return.append(anchor.text)
     return list_to_return
 
+# Gestion des stats
 def get_statistiques(t):
     empty_dict = {}
     list_headings = t.find_all("h2")
     for heading in list_headings:
-        # print(heading)
-        first_span = heading.find("span")
-        # Finally found the span with the heading "Statistiques"
-        try:
-            if first_span.attrs['id'] == "Statistiques":
-                parent = first_span.parent
-                stats_div = parent.find_next_sibling("div") 
-                stat_anchors = stats_div.find_all("a", title="Statistique")
-                for anchor in stat_anchors:
-                    try:
-                        stat_name = anchor.text
-                        if stat_name != "Statistique":
-                            prt = anchor.parent
-                            empty_dict[stat_name] = int(prt.find_next_sibling("td").text)
-                    except:
-                        pass
-        except:
-            pass
+        if "Statistiques" in heading.text:
+            list_next_divs = heading.find_next_siblings("div")
+            for next_divs in list_next_divs:
+                if next_divs.find("table"):
+                    stat_anchors = next_divs.find_all("a", title="Statistique")
+                    for i, anchor in enumerate(stat_anchors):
+                        if i<7:
+                            stat_name = anchor.text
+                            if stat_name != "Statistique":
+                                prt = anchor.parent
+                                empty_dict[stat_name] = int(prt.find_next_sibling("td").text)
     return empty_dict
 
 def get_corps(t):
@@ -106,6 +100,7 @@ def get_poids(t):
                 sibling_td = th.find_next_sibling("td")
                 return sibling_td.text.split(" ",1)[0]
 
+# Gestion des types
 def get_type(t):
     liste_types = []
     list_tr = t.find_all("tr")
@@ -124,6 +119,42 @@ def get_type(t):
     if len(liste_types)<2:
         liste_types.append("")
     return liste_types
+
+# Gestion des noms
+def get_étymologies(t):
+    # On est obligés car un pokémon en particulier n'a pas de section étyomologie
+    try:
+        liste_étymologies = []
+        étymologie_titre = t.find(id="Étymologies").parent
+        étymologie_liste = étymologie_titre.find_next_sibling("ul")
+        # print(étymologie_liste)
+        for li in étymologie_liste:
+            # print(li.text)
+            # print(len(li))
+            language = li.text.split(":",1)[0]
+            if len(li)>1:
+                if "Français" in language:
+                    # print(f"Français: {li.text}")
+                    nom = li.find("i")
+                    liste_étymologies.append(nom.text)
+                if "Allemand" in language or "allemand" in language:
+                    # print(f"Allemand: {li.text}")
+                    nom = li.find("i")
+                    liste_étymologies.append(nom.text)
+                if "Anglais" in language or "anglais" in language:
+                    # print(f"Anglais: {li.text}")
+                    nom = li.find("i")
+                    liste_étymologies.append(nom.text)
+                if "Japonais" in language or "japonais" in language:
+                    # print(f"Japonais: {li.text}")
+                    nom = li.find("i")
+                    liste_étymologies.append(nom.text)
+    except:
+        title = t.find('title')
+        if "XD001" in title.text:
+            liste_étymologies = ["XD001","XD001","Shadow Lugia","Dark Lugia"]
+    finally:
+        return liste_étymologies
 
 # Get the precise date from each pokemon
 def get_pokemon_data(page):
@@ -159,26 +190,48 @@ def get_pokemon_data(page):
     corps = get_corps(fiche_info)
     liste_data.append(corps)
 
+    étymologies = get_étymologies(soup)
+    liste_data.append(étymologies)
+
     statistiques = get_statistiques(soup)
     liste_data.append(statistiques)
 
     return liste_data
 
-#Get all pokedex
-différentes_generations = get_anchor_text(pokemons_par_generation)
-# print(différentes_generations)
+def write_csv(data):
+    file = "mon_pokedex.csv"
+    with open(file, "+a", encoding="utf8", newline='') as f:
+        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(data)
 
-# Get all the pokemons from the pokedex page
-for i,génération in enumerate(différentes_generations):
-    génération = génération.replace(" ", "_")
-    # print(génération)
-    liste_pokemon = get_anchor_text(f"https://www.pokepedia.fr/Cat%C3%A9gorie:{génération}")
-    liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x] #Remove from the list any entry with the characters inside.
-    # print(liste_pokemon)
-    
-    # for pokemon in liste_pokemon:
-    #     pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
+def main_process(test=False, test_list = []):
+    if test:
+        for pokemon in test_list:
+            test = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
+            test = flatten_list(test)
+            test.insert(0, 1)
+            test.insert(0, 1)
+            write_csv(test)
+    else:
+        #Page avec toutes les générations
+        pokemons_par_generation = "https://www.pokepedia.fr/Cat%C3%A9gorie:Pok%C3%A9mon_par_g%C3%A9n%C3%A9ration"
 
-data = get_pokemon_data(f"https://www.pokepedia.fr/Abo")
-print(flatten_list(data)[:-1])
-get_pokemon_data(f"https://www.pokepedia.fr/Rapasdepic")
+        # Liste des différentes générations pokemon
+        différentes_generations = get_anchor_text(pokemons_par_generation)
+
+        # On va circuler à travers ces listes pour pouvoir prendre les données de cahque pokemon dans cahque liste
+        for i, génération in enumerate(différentes_generations):
+            génération = génération.replace(" ", "_")
+            
+            #Remove from the list any entry with the characters inside.
+            liste_pokemon = get_anchor_text(f"https://www.pokepedia.fr/Cat%C3%A9gorie:{génération}")
+            liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x]
+
+            for id, pokemon in enumerate(liste_pokemon):
+                pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
+                flat_pkm = flatten_list(pkm_data)
+                flat_pkm.insert(0, i+1)
+                flat_pkm.insert(0, id+1)
+                write_csv(flat_pkm)
+main_process(test=True, test_list=["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo"])
+# main_process()
