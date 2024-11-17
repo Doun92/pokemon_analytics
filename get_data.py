@@ -80,25 +80,52 @@ def get_categorie(t):
                 unwanted_anchor.extract()
                 return sibling_td.text[1:]
 
+# Gestion des tailles
 def get_taille(t):
+    liste_tailles = []
     list_tr = t.find_all("tr")
     for tr in list_tr:
         anchor = tr.find("a", title="Taille")
         if anchor:
             list_th = tr.find_all("th")
             for th in list_th:
-                sibling_td = th.find_next_sibling("td")
-                return sibling_td.text.split(" ",1)[0]
+                print(th)
+                # Cette condition permet de gérer les pokémons à plusieur tailles
+                if th.has_attr('colspan'):
+                    parent = th.parent
+                    first_row = parent.next_sibling
+                    f_col_in_row = first_row.find_all("td")
+                    for td in f_col_in_row:
+                        taille = td.text.split(" ",1)[0]
+                        liste_tailles.append(taille)
+                else:
+                    sibling_td = th.find_next_sibling("td")
+                    taille = sibling_td.text.split(" ",1)[0]
+                    liste_tailles.append(taille)
+    return liste_tailles
 
+# Gestion des poids
 def get_poids(t):
+    liste_poids = []
     list_tr = t.find_all("tr")
     for tr in list_tr:
         anchor = tr.find("a", title="Poids")
         if anchor:
             list_th = tr.find_all("th")
             for th in list_th:
-                sibling_td = th.find_next_sibling("td")
-                return sibling_td.text.split(" ",1)[0]
+                # Cette condition permet de gérer les pokémons à plusieur poids
+                if th.has_attr('colspan'):
+                    parent = th.parent
+                    first_row = parent.next_sibling
+                    f_col_in_row = first_row.find_all("td")
+                    for td in f_col_in_row:
+                        poids = td.text.split(" ",1)[0]
+                        liste_poids.append(poids)
+                else:
+                    sibling_td = th.find_next_sibling("td")
+                    poids = sibling_td.text.split(" ",1)[0]
+                    liste_poids.append(poids)
+    return liste_poids
 
 # Gestion des types
 def get_type(t):
@@ -109,13 +136,29 @@ def get_type(t):
         if anchor:
             list_th = tr.find_all("th")
             for th in list_th:
-                sibling_td = th.find_next_sibling("td")
-                # print(sibling_td)
-                list_spans = sibling_td.find_all("span")
-                for span in list_spans:
-                    # print(span)
-                    type_pkm = span.find('a').attrs['title'].split(" ",1)[0]
-                    liste_types.append(type_pkm)
+                # This condition is meant to deal with pokemons with more than 2 types
+                if th.has_attr('colspan'):
+                    parent = th.parent
+                    first_row = parent.next_sibling
+                    f_col_in_row = first_row.find_all("td")
+                    for td in f_col_in_row:
+                        list_spans = td.find_all("span")
+                        for span in list_spans:
+                            type_pkm = span.find('a').attrs['title'].split(" ",1)[0]
+                            liste_types.append(type_pkm)
+                    second_row = parent.next_sibling.next_sibling
+                    s_col_in_row = second_row.find_all("td")
+                    for td in s_col_in_row:
+                        list_spans = td.find_all("span")
+                        for span in list_spans:
+                            type_pkm = span.find('a').attrs['title'].split(" ",1)[0]
+                            liste_types.append(type_pkm)
+                else:
+                    sibling_td = th.find_next_sibling("td")
+                    list_spans = sibling_td.find_all("span")
+                    for span in list_spans:
+                        type_pkm = span.find('a').attrs['title'].split(" ",1)[0]
+                        liste_types.append(type_pkm)
     if len(liste_types)<2:
         liste_types.append("")
     return liste_types
@@ -155,6 +198,12 @@ def get_étymologies(t):
             liste_étymologies = ["XD001","XD001","Shadow Lugia","Dark Lugia"]
     finally:
         return liste_étymologies
+
+def handle_exceptional_pokemons(liste,pkm,type_from_above):
+    if pkm == "Morphéo":
+        fake_liste = [type_from_above,""]
+        liste[1] = fake_liste
+        return liste
 
 # Get the precise date from each pokemon
 def get_pokemon_data(page):
@@ -208,10 +257,19 @@ def main_process(test=False, test_list = []):
     if test:
         for pokemon in test_list:
             test = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
-            test = flatten_list(test)
-            test.insert(0, 1)
-            test.insert(0, 1)
-            write_csv(test)
+            if pokemon == "Morphéo":
+                # print(test[1])
+                for sub_type in test[1]:
+                    response = handle_exceptional_pokemons(test,pokemon,sub_type)
+                    response = flatten_list(response)
+                    response.insert(0, 1)
+                    response.insert(0, 1)
+                    write_csv(response)
+            else:
+                test = flatten_list(test)
+                test.insert(0, 1)
+                test.insert(0, 1)
+                write_csv(test)
     else:
         #Page avec toutes les générations
         pokemons_par_generation = "https://www.pokepedia.fr/Cat%C3%A9gorie:Pok%C3%A9mon_par_g%C3%A9n%C3%A9ration"
@@ -229,9 +287,26 @@ def main_process(test=False, test_list = []):
 
             for id, pokemon in enumerate(liste_pokemon):
                 pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
-                flat_pkm = flatten_list(pkm_data)
-                flat_pkm.insert(0, i+1)
-                flat_pkm.insert(0, id+1)
-                write_csv(flat_pkm)
-main_process(test=True, test_list=["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo"])
+                if pokemon == "Morphéo":
+                    # print(pkm_data[1])
+                    for sub_type in pkm_data[1]:
+                        response = handle_exceptional_pokemons(pkm_data,pokemon,sub_type)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        response.insert(0, 1)
+                        write_csv(response)
+                else:
+                    flat_pkm = flatten_list(pkm_data)
+                    flat_pkm.insert(0, i+1)
+                    flat_pkm.insert(0, id+1)
+                    write_csv(flat_pkm)
+
+"""
+Dialga et Palkia vont faire souci.
+Ils ont tous deux une forme originelle à gérer.
+Comme pour Morphéo, il faudra créer une ligne par forme.
+Il ne manque plus qu'à créer deux lignes par taille et poids et c'est bon
+"""
+main_process(test=True, test_list=["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga"])
+# main_process(test=True, test_list=["Morphéo"])
 # main_process()
