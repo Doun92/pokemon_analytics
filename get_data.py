@@ -201,18 +201,19 @@ def get_étymologies(t):
     finally:
         return liste_étymologies
 
-def handle_exceptional_pokemons(liste, pkm, type_from_above, couleurs):
-    # if pkm == "Morphéo":
-    #     fake_liste = [type_from_above,""]
-    #     liste[1] = fake_liste
-    #     return liste
-    
+def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
     if pkm == "Morphéo":
-        fake_liste_types = [type_from_above,""]
-        fake_liste_colours = [couleurs, ""]
+        fake_liste_types = [param_1,""]
         liste[1] = fake_liste_types
-        liste[5] = fake_liste_colours
-        return liste
+        liste[5] = param_2
+
+    if pkm in ["Dialga", "Palkia"]:
+        liste[3] = param_1
+        liste[4] = param_2
+        liste[5] = param_3
+    
+    return liste
+
 
 # Get the precise date from each pokemon
 def get_pokemon_data(page):
@@ -274,6 +275,13 @@ def main_process(test=False, test_list = []):
                     response.insert(0, 1)
                     response.insert(0, 1)
                     write_csv(response)
+            elif pokemon in ["Dialga", "Palkia"]:
+                for sub_height, sub_weight, sub_colour in zip(test[3], test[4], test[5]):
+                    response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight, sub_colour)
+                    response = flatten_list(response)
+                    response.insert(0, 1)
+                    response.insert(0, 1)
+                    write_csv(response)
             else:
                 test = flatten_list(test)
                 test.insert(0, 1)
@@ -297,25 +305,26 @@ def main_process(test=False, test_list = []):
             for id, pokemon in enumerate(liste_pokemon):
                 pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
                 if pokemon == "Morphéo":
-                    # print(pkm_data[1])
-                    for sub_type in pkm_data[1]:
-                        response = handle_exceptional_pokemons(pkm_data,pokemon,sub_type)
+                    # print(test[1])
+                    for sub_type, sub_colour in zip(pkm_data[1], pkm_data[5][1:]):
+                        response = handle_exceptional_pokemons(pkm_data, pokemon, sub_type, sub_colour)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        response.insert(0, 1)
+                        write_csv(response)
+                elif pokemon in ["Dialga", "Palkia"]:
+                    for sub_height, sub_weight, sub_colour in zip(pkm_data[3], pkm_data[4], pkm_data[5]):
+                        response = handle_exceptional_pokemons(pkm_data, pokemon, sub_height, sub_weight, sub_colour)
                         response = flatten_list(response)
                         response.insert(0, 1)
                         response.insert(0, 1)
                         write_csv(response)
                 else:
-                    flat_pkm = flatten_list(pkm_data)
-                    flat_pkm.insert(0, i+1)
-                    flat_pkm.insert(0, id+1)
-                    write_csv(flat_pkm)
+                    pkm_data = flatten_list(pkm_data)
+                    pkm_data.insert(0, 1)
+                    pkm_data.insert(0, 1)
+                    write_csv(pkm_data)
 
-"""
-Dialga et Palkia vont faire souci.
-Ils ont tous deux une forme originelle à gérer.
-Comme pour Morphéo, il faudra créer une ligne par forme.
-Il ne manque plus qu'à créer deux lignes par taille et poids et c'est bon
-"""
-main_process(test=True, test_list=["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga"])
+main_process(test=True, test_list=["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua"])
 # main_process(test=True, test_list=["Morphéo"])
 # main_process()
