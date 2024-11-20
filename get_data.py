@@ -57,6 +57,7 @@ def flatten_list(data):
     return flattened
 
 def get_couleur(t):
+    liste_couleurs = []
     list_tr = t.find_all("tr")
     for tr in list_tr:
         anchor = tr.find("a", title="Couleur")
@@ -64,8 +65,10 @@ def get_couleur(t):
             list_th = tr.find_all("th")
             for th in list_th:
                 sibling_td = th.find_next_sibling("td")
-                image = sibling_td.find("img")
-                return image.attrs['alt']
+                liste_images = sibling_td.find_all("img")
+                for image in liste_images:
+                    liste_couleurs.append(image.attrs['alt'])
+    return liste_couleurs
 
 def get_categorie(t):
     list_tr = t.find_all("tr")
@@ -89,7 +92,6 @@ def get_taille(t):
         if anchor:
             list_th = tr.find_all("th")
             for th in list_th:
-                print(th)
                 # Cette condition permet de gérer les pokémons à plusieur tailles
                 if th.has_attr('colspan'):
                     parent = th.parent
@@ -199,10 +201,17 @@ def get_étymologies(t):
     finally:
         return liste_étymologies
 
-def handle_exceptional_pokemons(liste,pkm,type_from_above):
+def handle_exceptional_pokemons(liste, pkm, type_from_above, couleurs):
+    # if pkm == "Morphéo":
+    #     fake_liste = [type_from_above,""]
+    #     liste[1] = fake_liste
+    #     return liste
+    
     if pkm == "Morphéo":
-        fake_liste = [type_from_above,""]
-        liste[1] = fake_liste
+        fake_liste_types = [type_from_above,""]
+        fake_liste_colours = [couleurs, ""]
+        liste[1] = fake_liste_types
+        liste[5] = fake_liste_colours
         return liste
 
 # Get the precise date from each pokemon
@@ -259,8 +268,8 @@ def main_process(test=False, test_list = []):
             test = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
             if pokemon == "Morphéo":
                 # print(test[1])
-                for sub_type in test[1]:
-                    response = handle_exceptional_pokemons(test,pokemon,sub_type)
+                for sub_type, sub_colour in zip(test[1], test[5][1:]):
+                    response = handle_exceptional_pokemons(test, pokemon, sub_type, sub_colour)
                     response = flatten_list(response)
                     response.insert(0, 1)
                     response.insert(0, 1)
