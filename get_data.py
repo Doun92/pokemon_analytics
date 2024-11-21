@@ -71,17 +71,34 @@ def get_couleur(t):
     return liste_couleurs
 
 def get_categorie(t):
+    liste_catégories = []
     list_tr = t.find_all("tr")
     for tr in list_tr:
         anchor = tr.find("a", title="Catégorie")
         if anchor:
-            list_th = tr.find_all("th")
-            for th in list_th:
-                sibling_td = th.find_next_sibling("td")
-                # print(sibling_td)
-                unwanted_anchor = sibling_td.find('a')
-                unwanted_anchor.extract()
-                return sibling_td.text[1:]
+            liste_inside_cat = tr.find_all("a") 
+            if len(liste_inside_cat)>1:
+                list_th = tr.find_all("th")
+                for th in list_th:
+                    sibling_td = th.find_next_sibling("td")
+                    unwanted_anchor = sibling_td.find('a')
+                    unwanted_anchor.extract()
+                    liste_catégories.append(sibling_td.text[1:])
+            else:
+                plusieurs_catégories_tags = tr.find_next_sibling("tr")
+                liste_colonnes = plusieurs_catégories_tags.find_all("td")
+                for td in liste_colonnes:
+                    unwanted_anchor = td.find('a')
+                    unwanted_anchor.extract()
+                    try:
+                        unwanted_small = td.find('small')
+                        unwanted_small.extract()
+                    except:
+                        pass
+                    finally:
+                        liste_catégories.append(td.text[1:])
+
+    return liste_catégories
 
 # Gestion des tailles
 def get_taille(t):
@@ -212,8 +229,11 @@ def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
         liste[4] = param_2
         liste[5] = param_3
     
-    return liste
+    if pkm == "Bargantua":
+        print(param_1)
+        liste[2] = param_1
 
+    return liste
 
 # Get the precise date from each pokemon
 def get_pokemon_data(page):
@@ -282,6 +302,13 @@ def main_process(test=False, test_list = []):
                     response.insert(0, 1)
                     response.insert(0, 1)
                     write_csv(response)
+            elif pokemon == "Bargantua":
+                for sub_cat in test[2]:
+                    response = handle_exceptional_pokemons(test, pokemon, sub_cat)
+                    response = flatten_list(response)
+                    response.insert(0, 1)
+                    response.insert(0, 1)
+                    write_csv(response)
             else:
                 test = flatten_list(test)
                 test.insert(0, 1)
@@ -302,29 +329,48 @@ def main_process(test=False, test_list = []):
             liste_pokemon = get_anchor_text(f"https://www.pokepedia.fr/Cat%C3%A9gorie:{génération}")
             liste_pokemon = [ x for x in liste_pokemon if "Pokémon" not in x and "Ultra-Chimère" not in x and "Espèce convergente" not in x]
 
-            for id, pokemon in enumerate(liste_pokemon):
+            for pokemon in liste_pokemon:
                 pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
                 if pokemon == "Morphéo":
                     # print(test[1])
                     for sub_type, sub_colour in zip(pkm_data[1], pkm_data[5][1:]):
                         response = handle_exceptional_pokemons(pkm_data, pokemon, sub_type, sub_colour)
                         response = flatten_list(response)
-                        response.insert(0, 1)
-                        response.insert(0, 1)
+                        response.insert(0, i+1)
                         write_csv(response)
                 elif pokemon in ["Dialga", "Palkia"]:
                     for sub_height, sub_weight, sub_colour in zip(pkm_data[3], pkm_data[4], pkm_data[5]):
                         response = handle_exceptional_pokemons(pkm_data, pokemon, sub_height, sub_weight, sub_colour)
                         response = flatten_list(response)
-                        response.insert(0, 1)
-                        response.insert(0, 1)
+                        response.insert(0, i+1)
+                        write_csv(response)
+                elif pokemon == "Bargantua":
+                    for sub_cat in pkm_data[2]:
+                        response = handle_exceptional_pokemons(pkm_data, pokemon, sub_cat)
+                        response = flatten_list(response)
+                        response.insert(0, i+1)
                         write_csv(response)
                 else:
                     pkm_data = flatten_list(pkm_data)
-                    pkm_data.insert(0, 1)
-                    pkm_data.insert(0, 1)
+                    pkm_data.insert(0, i+1)
                     write_csv(pkm_data)
+liste_test_pkm = ["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua"]
+autres_pokemons = ["Arceus","Ceriflor","Cheniselle","Giratina","Motisma","Sancoki","Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
+"""
+Tous les pokémon avec Méga ont un problème
+Tous les pokémon régionaux
+Tous les pokémon gigamax
+Il manque les noms japonais et allemand des pokémon de neuvième génération
+"""
 
-main_process(test=True, test_list=["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua"])
-# main_process(test=True, test_list=["Morphéo"])
+
+"""
+Ce qu'il nous faut faire est la chose suivante:
+1)  Modifier la fonction exception pour pas qu'elle apparaisse dans la boucle for
+    En gros, on charge tous les paramètres et selon le paramètre cahrgé, on change qqch dans la liste
+2)  On gère les Méga, les Giga et les Régionaux, c'est en rapport avec le nom, ça devrait pas être compliqué
+3) On gère les exceptions des exceptions
+4) La nouvelle génération est toujours un problème, on complète la abse de données au cas où
+"""
+main_process(test=True, test_list=liste_test_pkm)
 # main_process()
