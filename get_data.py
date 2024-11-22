@@ -219,9 +219,13 @@ def get_étymologies(t):
         return liste_étymologies
 
 def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
-    if pkm == "Morphéo":
+    if pkm in ["Morphéo"]:
         fake_liste_types = [param_1,""]
         liste[1] = fake_liste_types
+        liste[5] = param_2
+    
+    if pkm == "Cheniselle":
+        liste[1] = param_1
         liste[5] = param_2
 
     if pkm in ["Dialga", "Palkia"]:
@@ -231,6 +235,9 @@ def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
     
     if pkm == "Bargantua":
         liste[2] = param_1
+
+    if pkm == "Ceriflor":
+        liste[5] = param_1
 
     return liste
 
@@ -282,10 +289,16 @@ def write_csv(data):
         writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
         writer.writerow(data)
 
+def split(a, n):
+    # a = list
+    # n = how much to divide
+    k, m = divmod(len(a), n)
+    return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
+
 def main_process(test=False, test_list = []):
     liste_pkm_exceptions = [
     "Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua",
-    "Arceus"
+    "Arceus", "Ceriflor", "Cheniselle", "Giratina"
                   ]
     
     if test:
@@ -293,36 +306,62 @@ def main_process(test=False, test_list = []):
             test = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
             # print(test[5])
             if pokemon in liste_pkm_exceptions:
-                if pokemon == "Morphéo":
+                # Pokémons avec plusieurs types et couleurs
+                if pokemon in ["Morphéo"]:
                     # print(test[1])
                     for sub_type, sub_colour in zip(test[1], test[5][1:]):
                         response = handle_exceptional_pokemons(test, pokemon, sub_type, sub_colour)
                         response = flatten_list(response)
                         response.insert(0, 1)
+                        # write_csv(response)
+                
+                # Pokémons avec plusieurs combos de types et couleurs
+                if pokemon == "Cheniselle":
+                    # print(test)
+                    divided_test = list(split(test[1],3))
+                    for combos, sub_colour in zip(divided_test, test[5][1:]):
+                        # print(combos)
+                        response = handle_exceptional_pokemons(test, pokemon, combos, sub_colour)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        # print(response)
                         write_csv(response)
+
+
+                # Pokemons avec plusieurs poids et formes        
                 if pokemon in ["Dialga", "Palkia"]:
                     for sub_height, sub_weight, sub_colour in zip(test[3], test[4], test[5]):
                         response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight, sub_colour)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        write_csv(response)
+                        # write_csv(response)
+
+                # Pokémon avec plusieurs catégories
                 if pokemon == "Bargantua":
                     for sub_cat in test[2]:
                         response = handle_exceptional_pokemons(test, pokemon, sub_cat)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        write_csv(response)
+                        # write_csv(response)
 
                 # Pokémons avec plusieurs couleurs
                 if pokemon == "Arceus":
                     test[5] = test[5][1]
                     response = flatten_list(test)
                     response.insert(0, 1)
-                    write_csv(response)
+                    # write_csv(response)
+
+                if pokemon == "Ceriflor":
+                    for sub_color in test[5][1:]:
+                        response = handle_exceptional_pokemons(test, pokemon, sub_color)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        # write_csv(response)
+
             else:
                 test = flatten_list(test)
                 test.insert(0, 1)
-                write_csv(test)
+                # write_csv(test)
     else:
         #Page avec toutes les générations
         pokemons_par_generation = "https://www.pokepedia.fr/Cat%C3%A9gorie:Pok%C3%A9mon_par_g%C3%A9n%C3%A9ration"
@@ -367,15 +406,21 @@ def main_process(test=False, test_list = []):
                         response = flatten_list(pkm_data)
                         response.insert(0, i+1)
                         write_csv(response)
+                    if pokemon == "Ceriflor":
+                        for sub_color in pkm_data[5][1:]:
+                            response = handle_exceptional_pokemons(pkm_data, pokemon, sub_color)
+                            response = flatten_list(response)
+                            response.insert(0, 1)
+                            write_csv(response)
                 else:
                     pkm_data = flatten_list(pkm_data)
                     pkm_data.insert(0, i+1)
                     write_csv(pkm_data)
 liste_test_pkm = [
     "Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua",
-    "Arceus"
+    "Arceus", "Ceriflor", "Cheniselle", "Giratina"
                   ]
-autres_pokemons = ["Ceriflor","Cheniselle","Giratina","Motisma","Sancoki","Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
+autres_pokemons = ["Motisma","Sancoki","Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
 """
 Tous les pokémon avec Méga ont un problème
 Tous les pokémon régionaux
