@@ -230,7 +230,6 @@ def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
         liste[5] = param_3
     
     if pkm == "Bargantua":
-        print(param_1)
         liste[2] = param_1
 
     return liste
@@ -284,34 +283,44 @@ def write_csv(data):
         writer.writerow(data)
 
 def main_process(test=False, test_list = []):
+    liste_pkm_exceptions = [
+    "Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua",
+    "Arceus"
+                  ]
+    
     if test:
         for pokemon in test_list:
             test = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
-            if pokemon == "Morphéo":
-                # print(test[1])
-                for sub_type, sub_colour in zip(test[1], test[5][1:]):
-                    response = handle_exceptional_pokemons(test, pokemon, sub_type, sub_colour)
-                    response = flatten_list(response)
-                    response.insert(0, 1)
-                    response.insert(0, 1)
-                    write_csv(response)
-            elif pokemon in ["Dialga", "Palkia"]:
-                for sub_height, sub_weight, sub_colour in zip(test[3], test[4], test[5]):
-                    response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight, sub_colour)
-                    response = flatten_list(response)
-                    response.insert(0, 1)
-                    response.insert(0, 1)
-                    write_csv(response)
-            elif pokemon == "Bargantua":
-                for sub_cat in test[2]:
-                    response = handle_exceptional_pokemons(test, pokemon, sub_cat)
-                    response = flatten_list(response)
-                    response.insert(0, 1)
+            # print(test[5])
+            if pokemon in liste_pkm_exceptions:
+                if pokemon == "Morphéo":
+                    # print(test[1])
+                    for sub_type, sub_colour in zip(test[1], test[5][1:]):
+                        response = handle_exceptional_pokemons(test, pokemon, sub_type, sub_colour)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        write_csv(response)
+                if pokemon in ["Dialga", "Palkia"]:
+                    for sub_height, sub_weight, sub_colour in zip(test[3], test[4], test[5]):
+                        response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight, sub_colour)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        write_csv(response)
+                if pokemon == "Bargantua":
+                    for sub_cat in test[2]:
+                        response = handle_exceptional_pokemons(test, pokemon, sub_cat)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        write_csv(response)
+
+                # Pokémons avec plusieurs couleurs
+                if pokemon == "Arceus":
+                    test[5] = test[5][1]
+                    response = flatten_list(test)
                     response.insert(0, 1)
                     write_csv(response)
             else:
                 test = flatten_list(test)
-                test.insert(0, 1)
                 test.insert(0, 1)
                 write_csv(test)
     else:
@@ -331,31 +340,42 @@ def main_process(test=False, test_list = []):
 
             for pokemon in liste_pokemon:
                 pkm_data = get_pokemon_data(f"https://www.pokepedia.fr/{pokemon}")
-                if pokemon == "Morphéo":
-                    # print(test[1])
-                    for sub_type, sub_colour in zip(pkm_data[1], pkm_data[5][1:]):
-                        response = handle_exceptional_pokemons(pkm_data, pokemon, sub_type, sub_colour)
-                        response = flatten_list(response)
-                        response.insert(0, i+1)
-                        write_csv(response)
-                elif pokemon in ["Dialga", "Palkia"]:
-                    for sub_height, sub_weight, sub_colour in zip(pkm_data[3], pkm_data[4], pkm_data[5]):
-                        response = handle_exceptional_pokemons(pkm_data, pokemon, sub_height, sub_weight, sub_colour)
-                        response = flatten_list(response)
-                        response.insert(0, i+1)
-                        write_csv(response)
-                elif pokemon == "Bargantua":
-                    for sub_cat in pkm_data[2]:
-                        response = handle_exceptional_pokemons(pkm_data, pokemon, sub_cat)
-                        response = flatten_list(response)
+                if pokemon in liste_pkm_exceptions:
+                    if pokemon == "Morphéo":
+                        # print(test[1])
+                        for sub_type, sub_colour in zip(pkm_data[1], pkm_data[5][1:]):
+                            response = handle_exceptional_pokemons(pkm_data, pokemon, sub_type, sub_colour)
+                            response = flatten_list(response)
+                            response.insert(0, i+1)
+                            write_csv(response)
+                    if pokemon in ["Dialga", "Palkia"]:
+                        for sub_height, sub_weight, sub_colour in zip(pkm_data[3], pkm_data[4], pkm_data[5]):
+                            response = handle_exceptional_pokemons(pkm_data, pokemon, sub_height, sub_weight, sub_colour)
+                            response = flatten_list(response)
+                            response.insert(0, i+1)
+                            write_csv(response)
+                    if pokemon == "Bargantua":
+                        for sub_cat in pkm_data[2]:
+                            response = handle_exceptional_pokemons(pkm_data, pokemon, sub_cat)
+                            response = flatten_list(response)
+                            response.insert(0, i+1)
+                            write_csv(response)
+
+                    # Pokémons avec plusieurs couleurs
+                    if pokemon == "Arceus":
+                        pkm_data[5] = pkm_data[5][1]
+                        response = flatten_list(pkm_data)
                         response.insert(0, i+1)
                         write_csv(response)
                 else:
                     pkm_data = flatten_list(pkm_data)
                     pkm_data.insert(0, i+1)
                     write_csv(pkm_data)
-liste_test_pkm = ["Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua"]
-autres_pokemons = ["Arceus","Ceriflor","Cheniselle","Giratina","Motisma","Sancoki","Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
+liste_test_pkm = [
+    "Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua",
+    "Arceus"
+                  ]
+autres_pokemons = ["Ceriflor","Cheniselle","Giratina","Motisma","Sancoki","Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
 """
 Tous les pokémon avec Méga ont un problème
 Tous les pokémon régionaux
@@ -372,5 +392,5 @@ Ce qu'il nous faut faire est la chose suivante:
 3) On gère les exceptions des exceptions
 4) La nouvelle génération est toujours un problème, on complète la abse de données au cas où
 """
-main_process(test=True, test_list=liste_test_pkm)
+main_process(test=True, test_list=liste_test_pkm, )
 # main_process()
