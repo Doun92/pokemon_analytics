@@ -33,7 +33,9 @@ def get_statistiques(t):
                                 empty_dict[stat_name] = int(prt.find_next_sibling("td").text)
     return empty_dict
 
+# Gestion des différents corps
 def get_corps(t):
+    liste_corps = []
     list_tr = t.find_all("tr")
     for tr in list_tr:
         anchor = tr.find("a", title="Apparence du corps")
@@ -42,7 +44,8 @@ def get_corps(t):
             for th in list_th:
                 sibling_td = th.find_next_sibling("td")
                 corps = sibling_td.find("img")
-                return corps.attrs['alt']
+                liste_corps.append(corps.attrs['alt'])     
+    return liste_corps
 
 # Function to flatten nested lists and dictionaries
 def flatten_list(data):
@@ -147,7 +150,7 @@ def get_poids(t):
     return liste_poids
 
 # Gestion des types
-def get_type(t):
+def get_type(t, pkm):
     liste_types = []
     list_tr = t.find_all("tr")
     for tr in list_tr:
@@ -172,6 +175,15 @@ def get_type(t):
                         for span in list_spans:
                             type_pkm = span.find('a').attrs['title'].split(" ",1)[0]
                             liste_types.append(type_pkm)
+                    if pkm == "Motisma":
+                        third_row = second_row.next_sibling
+                        s_col_in_row = third_row.find_all("td")
+                        for td in s_col_in_row:
+                            list_spans = td.find_all("span")
+                            for span in list_spans:
+                                type_pkm = span.find('a').attrs['title'].split(" ",1)[0]
+                                liste_types.append(type_pkm)
+                # Les pokemons plus normaux qui n'ont pas des combos de types
                 else:
                     sibling_td = th.find_next_sibling("td")
                     list_spans = sibling_td.find_all("span")
@@ -232,12 +244,24 @@ def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
         liste[3] = param_1
         liste[4] = param_2
         liste[5] = param_3
-    
+
+    # Pokemon changement de poids et taille uniquement
+    if pkm == "Giratina":
+        liste[3] = param_1
+        liste[4] = param_2
+
     if pkm == "Bargantua":
         liste[2] = param_1
 
     if pkm == "Ceriflor":
         liste[5] = param_1
+    
+    if pkm == "Sancoki":
+        liste[5] = param_1
+        liste[6] = param_2
+    
+    if pkm == "Motisma":
+        liste[1] = param_1
 
     return liste
 
@@ -257,7 +281,7 @@ def get_pokemon_data(page):
     liste_data.append(numéro_national.text[2:])
 
     # Get the types of Pokemons
-    types = get_type(fiche_info)
+    types = get_type(fiche_info, title.text.split(" — ")[0])
     liste_data.append(types)
 
     catégorie = get_categorie(fiche_info)
@@ -297,9 +321,10 @@ def split(a, n):
 
 def main_process(test=False, test_list = []):
     liste_pkm_exceptions = [
-    "Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua",
-    "Arceus", "Ceriflor", "Cheniselle", "Giratina"
-                  ]
+    "Morphéo","Dialga", "Bargantua",
+    "Arceus", "Ceriflor", "Cheniselle",
+    "Giratina", "Motisma", "Sancoki"
+    ]
     
     if test:
         for pokemon in test_list:
@@ -313,28 +338,42 @@ def main_process(test=False, test_list = []):
                         response = handle_exceptional_pokemons(test, pokemon, sub_type, sub_colour)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        # write_csv(response)
+                        write_csv(response)
                 
-                # Pokémons avec plusieurs combos de types et couleurs
-                if pokemon == "Cheniselle":
-                    # print(test)
-                    divided_test = list(split(test[1],3))
-                    for combos, sub_colour in zip(divided_test, test[5][1:]):
-                        # print(combos)
-                        response = handle_exceptional_pokemons(test, pokemon, combos, sub_colour)
+                # Pokemon avec plusieurs double types
+                if pokemon == "Motisma":
+                    divided_test = list(split(test[1],6))
+                    for sub_types in divided_test:
+                        response = handle_exceptional_pokemons(test, pokemon, sub_types)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        # print(response)
+                        write_csv(response)
+
+                # Pokémons avec plusieurs combos de types et couleurs
+                if pokemon == "Cheniselle":
+                    divided_test = list(split(test[1],3))
+                    for sub_types, sub_colour in zip(divided_test, test[5][1:]):
+                        response = handle_exceptional_pokemons(test, pokemon, sub_types, sub_colour)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
                         write_csv(response)
 
 
-                # Pokemons avec plusieurs poids et formes        
+                # Pokemons avec plusieurs poids et formes et couleurs       
                 if pokemon in ["Dialga", "Palkia"]:
                     for sub_height, sub_weight, sub_colour in zip(test[3], test[4], test[5]):
                         response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight, sub_colour)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        # write_csv(response)
+                        write_csv(response)
+                
+                # Pokemons avec tailles différentes
+                if pokemon == "Giratina":
+                    for sub_height, sub_weight in zip(test[3], test[4]):
+                        response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        write_csv(response)
 
                 # Pokémon avec plusieurs catégories
                 if pokemon == "Bargantua":
@@ -342,26 +381,35 @@ def main_process(test=False, test_list = []):
                         response = handle_exceptional_pokemons(test, pokemon, sub_cat)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        # write_csv(response)
+                        write_csv(response)
 
                 # Pokémons avec plusieurs couleurs
                 if pokemon == "Arceus":
                     test[5] = test[5][1]
                     response = flatten_list(test)
                     response.insert(0, 1)
-                    # write_csv(response)
+                    write_csv(response)
 
-                if pokemon == "Ceriflor":
+                # Différentes couleurs
+                if pokemon in ["Ceriflor"]:
                     for sub_color in test[5][1:]:
                         response = handle_exceptional_pokemons(test, pokemon, sub_color)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        # write_csv(response)
+                        write_csv(response)  
+
+                if pokemon == "Sancoki":
+                    print("ici")
+                    for sub_color in test[5][1:]:
+                        response = handle_exceptional_pokemons(test, pokemon, sub_color, test[6,1])
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        write_csv(response)  
 
             else:
                 test = flatten_list(test)
                 test.insert(0, 1)
-                # write_csv(test)
+                write_csv(test)
     else:
         #Page avec toutes les générations
         pokemons_par_generation = "https://www.pokepedia.fr/Cat%C3%A9gorie:Pok%C3%A9mon_par_g%C3%A9n%C3%A9ration"
@@ -412,15 +460,23 @@ def main_process(test=False, test_list = []):
                             response = flatten_list(response)
                             response.insert(0, 1)
                             write_csv(response)
+                    
+                    # Pokemons avec tailles différentes
+                    if pokemon == "Giratina":
+                        for sub_height, sub_weight in zip(test[3], test[4]):
+                            response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight)
+                            response = flatten_list(response)
+                            response.insert(0, 1)
+                            write_csv(response)
                 else:
                     pkm_data = flatten_list(pkm_data)
                     pkm_data.insert(0, i+1)
                     write_csv(pkm_data)
 liste_test_pkm = [
     "Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua",
-    "Arceus", "Ceriflor", "Cheniselle", "Giratina"
+    "Arceus", "Ceriflor", "Cheniselle", "Giratina", "Motisma", "Sancoki"
                   ]
-autres_pokemons = ["Motisma","Sancoki","Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
+autres_pokemons = ["Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
 """
 Tous les pokémon avec Méga ont un problème
 Tous les pokémon régionaux
