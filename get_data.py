@@ -399,9 +399,9 @@ def main_process(test=False, test_list = []):
                         write_csv(response)  
 
                 if pokemon == "Sancoki":
-                    print("ici")
+
                     for sub_color in test[5][1:]:
-                        response = handle_exceptional_pokemons(test, pokemon, sub_color, test[6,1])
+                        response = handle_exceptional_pokemons(test, pokemon, sub_color, test[6][1])
                         response = flatten_list(response)
                         response.insert(0, 1)
                         write_csv(response)  
