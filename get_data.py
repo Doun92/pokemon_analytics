@@ -43,8 +43,9 @@ def get_corps(t):
             list_th = tr.find_all("th")
             for th in list_th:
                 sibling_td = th.find_next_sibling("td")
-                corps = sibling_td.find("img")
-                liste_corps.append(corps.attrs['alt'])     
+                liste_images = sibling_td.find_all("img")
+                for image in liste_images:
+                    liste_corps.append(image.attrs['alt'])  
     return liste_corps
 
 # Function to flatten nested lists and dictionaries
@@ -258,7 +259,6 @@ def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
     
     if pkm == "Sancoki":
         liste[5] = param_1
-        liste[6] = param_2
     
     if pkm == "Motisma":
         liste[1] = param_1
@@ -352,6 +352,7 @@ def main_process(test=False, test_list = []):
                 # Pokémons avec plusieurs combos de types et couleurs
                 if pokemon == "Cheniselle":
                     divided_test = list(split(test[1],3))
+                    test[6] = test[6][1]
                     for sub_types, sub_colour in zip(divided_test, test[5][1:]):
                         response = handle_exceptional_pokemons(test, pokemon, sub_types, sub_colour)
                         response = flatten_list(response)
@@ -369,6 +370,7 @@ def main_process(test=False, test_list = []):
                 
                 # Pokemons avec tailles différentes
                 if pokemon == "Giratina":
+                    test[6] = test[6][1]
                     for sub_height, sub_weight in zip(test[3], test[4]):
                         response = handle_exceptional_pokemons(test, pokemon, sub_height, sub_weight)
                         response = flatten_list(response)
@@ -399,9 +401,9 @@ def main_process(test=False, test_list = []):
                         write_csv(response)  
 
                 if pokemon == "Sancoki":
-
+                    test[6] = test[6][1]
                     for sub_color in test[5][1:]:
-                        response = handle_exceptional_pokemons(test, pokemon, sub_color, test[6][1])
+                        response = handle_exceptional_pokemons(test, pokemon, sub_color)
                         response = flatten_list(response)
                         response.insert(0, 1)
                         write_csv(response)  
