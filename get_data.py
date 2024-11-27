@@ -246,10 +246,22 @@ def handle_exceptional_pokemons(liste, pkm, param_1="", param_2="", param_3=""):
         liste[4] = param_2
         liste[5] = param_3
 
+    if pkm == "Shaymin":
+        if param_1 == "Plante":
+            liste[1] = [param_1,""]
+        else:    
+            liste[1] = param_1
+        liste[3] = param_2
+        liste[4] = param_3
+
     # Pokemon changement de poids et taille uniquement
     if pkm == "Giratina":
         liste[3] = param_1
         liste[4] = param_2
+
+    if pkm in ["Boréas","Fulguris", "Démétéros"]:
+        liste[3] = param_1
+        liste[6] = param_2
 
     if pkm == "Bargantua":
         liste[2] = param_1
@@ -323,7 +335,8 @@ def main_process(test=False, test_list = []):
     liste_pkm_exceptions = [
     "Morphéo","Dialga", "Bargantua",
     "Arceus", "Ceriflor", "Cheniselle",
-    "Giratina", "Motisma", "Sancoki"
+    "Giratina", "Motisma", "Sancoki", "Tritosor","Shaymin",
+    "Boréas","Fulguris", "Démétéros"
     ]
     
     if test:
@@ -336,6 +349,18 @@ def main_process(test=False, test_list = []):
                     # print(test[1])
                     for sub_type, sub_colour in zip(test[1], test[5][1:]):
                         response = handle_exceptional_pokemons(test, pokemon, sub_type, sub_colour)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        write_csv(response)
+
+                # Pokémons avec différents types, poids et taille
+                if pokemon == "Shaymin":
+                    first_slice = test[1][0]
+                    second_slice = test[1][1:]
+                    liste_of_list_types = [first_slice, second_slice]
+                    print(liste_of_list_types)
+                    for sub_type, sub_taille, sub_height in zip(liste_of_list_types, test[3], test[4]):
+                        response = handle_exceptional_pokemons(test, pokemon, sub_type, sub_taille, sub_height)
                         response = flatten_list(response)
                         response.insert(0, 1)
                         write_csv(response)
@@ -377,6 +402,16 @@ def main_process(test=False, test_list = []):
                         response.insert(0, 1)
                         write_csv(response)
 
+                # Différentes tailles et formes (Avec une à retirer au milieu)
+                if pokemon in ["Boréas","Fulguris", "Démétéros"]:
+                    del test[6][1]
+                    for sub_tailles, sub_Corps in zip(test[3], test[6]):
+                        response = handle_exceptional_pokemons(test, pokemon, sub_tailles, sub_Corps)
+                        response = flatten_list(response)
+                        response.insert(0, 1)
+                        write_csv(response) 
+                                                      
+
                 # Pokémon avec plusieurs catégories
                 if pokemon == "Bargantua":
                     for sub_cat in test[2]:
@@ -400,14 +435,15 @@ def main_process(test=False, test_list = []):
                         response.insert(0, 1)
                         write_csv(response)  
 
-                if pokemon == "Sancoki":
+                if pokemon in ["Sancoki", "Tritosor"]:
                     test[6] = test[6][1]
                     for sub_color in test[5][1:]:
                         response = handle_exceptional_pokemons(test, pokemon, sub_color)
                         response = flatten_list(response)
                         response.insert(0, 1)
-                        write_csv(response)  
+                        write_csv(response)
 
+            
             else:
                 test = flatten_list(test)
                 test.insert(0, 1)
@@ -476,9 +512,9 @@ def main_process(test=False, test_list = []):
                     write_csv(pkm_data)
 liste_test_pkm = [
     "Abo","Abra","Alakazam","Aéromite","XD001","Morphéo","Dialga", "Bargantua",
-    "Arceus", "Ceriflor", "Cheniselle", "Giratina", "Motisma", "Sancoki"
+    "Arceus", "Ceriflor", "Cheniselle", "Giratina", "Motisma", "Sancoki", "Shaymin", "Boréas"
                   ]
-autres_pokemons = ["Shaymin","Tritosor","Boréas","Darumacho","Démétéros","Fulguris","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
+autres_pokemons = ["Darumacho","Kyurem","Meloetta","Vivaldaim","Banshitrouye","Hoopa","Méga-Absol","Mistigrix","Pitrouille","Primo-Groudon","Prismillon","Zygarde","Feunard_d'Alola","Froussardine","Lougaroc","Météno","Plumeline","Charmilly","Charmilly_Gigamax","Shifours","Ursaking","Zacian","Zamazenta","Arboliva","Famignol","Mordudor","Ogerpon","Superdofin","Tapatoès","Terapagos"]
 """
 Tous les pokémon avec Méga ont un problème
 Tous les pokémon régionaux
